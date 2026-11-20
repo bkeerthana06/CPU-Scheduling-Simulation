@@ -1,0 +1,1015 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPU Scheduling Simulator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f3f5fb;
+    color: #202746;
+}
+
+header {
+    background: linear-gradient(120deg, #171d4c, #5759d8);
+    color: white;
+    text-align: center;
+    padding: 30px 15px;
+}
+
+header h1 {
+    margin-bottom: 8px;
+}
+
+main {
+    max-width: 1150px;
+    margin: 25px auto;
+    padding: 0 15px;
+}
+
+.panel {
+    background: white;
+    padding: 22px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 18px #0000000c;
+}
+
+h2 {
+    margin-bottom: 16px;
+    color: #353c83;
+}
+
+h3 {
+    margin: 18px 0 10px;
+}
+
+input, select {
+    padding: 11px;
+    border: 1px solid #ccd2e4;
+    border-radius: 7px;
+    width: 100%;
+    margin-top: 5px;
+}
+
+label {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.fields {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+button {
+    background: #5558d5;
+    color: white;
+    border: none;
+    padding: 11px 16px;
+    border-radius: 7px;
+    cursor: pointer;
+    margin: 10px 5px 0 0;
+    font-weight: bold;
+}
+
+button:hover {
+    background: #373aab;
+}
+
+.secondary {
+    background: #e9eaff;
+    color: #3538a5;
+}
+
+.danger {
+    background: #e75a70;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+th, td {
+    padding: 11px;
+    border-bottom: 1px solid #e5e8f0;
+    text-align: center;
+}
+
+th {
+    background: #f0f1ff;
+}
+
+.chart {
+    display: flex;
+    min-height: 75px;
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.block {
+    min-width: 55px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    border-right: 2px solid white;
+    transition: .3s;
+}
+
+.block small {
+    margin-top: 5px;
+}
+
+.block.active {
+    outline: 4px solid #ffbd45;
+    outline-offset: -4px;
+    filter: brightness(1.2);
+}
+
+.idle {
+    background: #9099a9 !important;
+}
+
+.log {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.log div {
+    padding: 10px;
+    margin: 7px 0;
+    background: #f0f3ff;
+    border-left: 4px solid #5558d5;
+    border-radius: 5px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.stat {
+    background: #f0f1ff;
+    padding: 14px;
+    border-radius: 9px;
+}
+
+.stat strong {
+    display: block;
+    font-size: 21px;
+    margin-top: 5px;
+}
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.tab {
+    background: #e9eaff;
+    color: #3538a5;
+}
+
+.tab.active {
+    background: #5558d5;
+    color: white;
+}
+
+.content {
+    display: none;
+    padding-top: 15px;
+    line-height: 1.8;
+}
+
+.content.active {
+    display: block;
+}
+
+pre {
+    background: #171d32;
+    color: #e4eaff;
+    padding: 18px;
+    border-radius: 9px;
+    overflow-x: auto;
+    margin-top: 10px;
+    white-space: pre-wrap;
+}
+
+@media(max-width:650px) {
+    .fields {
+        grid-template-columns: 1fr;
+    }
+
+    .stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .panel {
+        padding: 14px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>CPU Scheduling Simulator</h1>
+    <p>Operating Systems Virtual Lab</p>
+    <p>Visualize FCFS | SJF | Round Robin</p>
+</header>
+
+<main>
+
+<section class="panel">
+    <h2>1. Process Management</h2>
+
+    <div class="fields">
+        <div>
+            <label>Process ID</label>
+            <input id="pid" value="P1">
+        </div>
+
+        <div>
+            <label>Arrival Time</label>
+            <input type="number" id="arrival" value="0" min="0">
+        </div>
+
+        <div>
+            <label>Burst Time</label>
+            <input type="number" id="burst" value="5" min="1">
+        </div>
+    </div>
+
+    <button onclick="addProcess()">+ Add Process</button>
+    <button class="secondary" onclick="sampleData()">Load Sample</button>
+    <button class="danger" onclick="clearAll()">Clear All</button>
+
+    <h3>Ready Queue</h3>
+
+    <div id="processTable">
+        No processes added.
+    </div>
+</section>
+
+
+<section class="panel">
+    <h2>2. Scheduling Algorithm</h2>
+
+    <label>Select Algorithm</label>
+
+    <select id="algorithm" onchange="changeAlgorithm()">
+        <option value="FCFS">First Come First Served (FCFS)</option>
+        <option value="SJF">Shortest Job First (SJF)</option>
+        <option value="RR">Round Robin (RR)</option>
+    </select>
+
+    <div id="quantumBox" style="display:none;margin-top:12px">
+        <label>Time Quantum</label>
+        <input type="number" id="quantum" value="2" min="1">
+    </div>
+
+    <button onclick="runSimulation()">Run Simulation</button>
+    <button class="secondary" onclick="nextStep()">Next Step</button>
+    <button class="secondary" onclick="resetChart()">Reset</button>
+
+    <p id="description" style="margin-top:12px">
+        FCFS executes processes according to arrival time.
+    </p>
+</section>
+
+
+<section class="panel">
+    <h2>3. Gantt Chart</h2>
+
+    <div class="stats">
+        <div class="stat">
+            CPU Busy Time
+            <strong id="busy">-</strong>
+        </div>
+
+        <div class="stat">
+            Total Time
+            <strong id="total">-</strong>
+        </div>
+
+        <div class="stat">
+            Average Waiting
+            <strong id="avgWT">-</strong>
+        </div>
+
+        <div class="stat">
+            Average Turnaround
+            <strong id="avgTAT">-</strong>
+        </div>
+    </div>
+
+    <div class="chart" id="chart">
+        Gantt chart appears here.
+    </div>
+
+    <h3>Process Calculation Table</h3>
+
+    <div id="resultTable">
+        No results available.
+    </div>
+</section>
+
+
+<section class="panel">
+    <h2>4. Operation Log</h2>
+    <div class="log" id="log">
+        <div>Waiting for simulation...</div>
+    </div>
+</section>
+
+
+<section class="panel">
+    <h2>5. Lab Manual</h2>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('aim',this)">AIM</button>
+        <button class="tab" onclick="showTab('procedure',this)">Procedure</button>
+        <button class="tab" onclick="showTab('pseudo',this)">Pseudo Code</button>
+        <button class="tab" onclick="showTab('code',this)">C Code</button>
+        <button class="tab" onclick="showTab('faq',this)">FAQ</button>
+    </div>
+
+    <div class="content active" id="aim">
+        <h3>AIM</h3>
+        To implement CPU scheduling algorithms such as FCFS,
+        SJF and Round Robin and calculate Completion Time,
+        Turnaround Time and Waiting Time.
+    </div>
+
+    <div class="content" id="procedure">
+        <h3>Procedure</h3>
+        <ol>
+            <li>Enter process ID, arrival time and burst time.</li>
+            <li>Add the processes to the ready queue.</li>
+            <li>Select the required scheduling algorithm.</li>
+            <li>Enter time quantum for Round Robin.</li>
+            <li>Click Run Simulation.</li>
+            <li>Observe the Gantt chart.</li>
+            <li>Calculate CT, TAT and WT.</li>
+            <li>Compare the results of different algorithms.</li>
+        </ol>
+    </div>
+
+    <div class="content" id="pseudo">
+        <h3>Pseudo Code</h3>
+        <pre>
+START
+
+Read number of processes
+
+Read arrival time and burst time
+
+Select scheduling algorithm
+
+Initialize current time = 0
+
+WHILE processes are incomplete
+
+    Find available processes
+
+    Select process according to algorithm
+
+    Execute process
+
+    Update current time
+
+    Calculate completion time
+
+END WHILE
+
+TAT = CT - AT
+
+WT = TAT - BT
+
+Display Gantt chart and results
+
+STOP
+        </pre>
+    </div>
+
+    <div class="content" id="code">
+        <h3>C Program - FCFS</h3>
+
+        <pre>
+#include &lt;stdio.h&gt;
+
+int main()
+{
+    int n, i, j, time = 0;
+    int at[20], bt[20];
+    int ct[20], tat[20], wt[20];
+    int pid[20], temp;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    for(i = 0; i < n; i++)
+    {
+        printf("Enter PID, AT, BT: ");
+        scanf("%d %d %d",
+              &pid[i], &at[i], &bt[i]);
+    }
+
+    for(i = 0; i < n-1; i++)
+    {
+        for(j = i+1; j < n; j++)
+        {
+            if(at[i] > at[j])
+            {
+                temp = at[i];
+                at[i] = at[j];
+                at[j] = temp;
+
+                temp = bt[i];
+                bt[i] = bt[j];
+                bt[j] = temp;
+
+                temp = pid[i];
+                pid[i] = pid[j];
+                pid[j] = temp;
+            }
+        }
+    }
+
+    for(i = 0; i < n; i++)
+    {
+        if(time < at[i])
+            time = at[i];
+
+        time += bt[i];
+
+        ct[i] = time;
+        tat[i] = ct[i] - at[i];
+        wt[i] = tat[i] - bt[i];
+    }
+
+    printf("PID AT BT CT TAT WT\n");
+
+    for(i = 0; i < n; i++)
+    {
+        printf("%d %d %d %d %d %d\n",
+        pid[i], at[i], bt[i],
+        ct[i], tat[i], wt[i]);
+    }
+
+    return 0;
+}
+        </pre>
+    </div>
+
+    <div class="content" id="faq">
+        <h3>Frequently Asked Questions</h3>
+
+        <p><b>1. What is CPU scheduling?</b><br>
+        It is the method of selecting a process for CPU execution.</p>
+
+        <p><b>2. What is arrival time?</b><br>
+        Time at which a process enters the ready queue.</p>
+
+        <p><b>3. What is burst time?</b><br>
+        CPU execution time required by a process.</p>
+
+        <p><b>4. What is completion time?</b><br>
+        Time at which a process finishes execution.</p>
+
+        <p><b>5. What is turnaround time?</b><br>
+        TAT = Completion Time - Arrival Time.</p>
+
+        <p><b>6. What is waiting time?</b><br>
+        WT = Turnaround Time - Burst Time.</p>
+
+        <p><b>7. What is Round Robin?</b><br>
+        Each process gets a fixed CPU time quantum.</p>
+
+        <p><b>8. Which algorithm may cause starvation?</b><br>
+        SJF may cause starvation for long processes.</p>
+    </div>
+</section>
+
+</main>
+
+
+<script>
+
+let processes = [];
+let timeline = [];
+let results = [];
+let step = 0;
+
+const colors = [
+    "#565bd5",
+    "#16a39a",
+    "#e58b3e",
+    "#9862c7",
+    "#d95778",
+    "#398eb4",
+    "#779b45"
+];
+
+function addProcess()
+{
+    let id = document.getElementById("pid").value.trim();
+    let at = Number(document.getElementById("arrival").value);
+    let bt = Number(document.getElementById("burst").value);
+
+    if(!id || !Number.isInteger(at) || at < 0 ||
+       !Number.isInteger(bt) || bt < 1)
+    {
+        alert("Enter valid process details.");
+        return;
+    }
+
+    if(processes.some(p => p.id.toLowerCase() === id.toLowerCase()))
+    {
+        alert("Process ID already exists.");
+        return;
+    }
+
+    processes.push({
+        id, at, bt,
+        index: processes.length
+    });
+
+    renderProcesses();
+
+    resetChart();
+
+    document.getElementById("pid").value =
+        "P" + (processes.length + 1);
+}
+
+
+function renderProcesses()
+{
+    let html = `
+    <table>
+    <tr>
+    <th>PID</th>
+    <th>Arrival</th>
+    <th>Burst</th>
+    <th>Action</th>
+    </tr>`;
+
+    processes.forEach((p,i) => {
+        html += `
+        <tr>
+        <td>${escapeText(p.id)}</td>
+        <td>${p.at}</td>
+        <td>${p.bt}</td>
+        <td>
+        <button class="danger"
+        onclick="removeProcess(${i})">Delete</button>
+        </td>
+        </tr>`;
+    });
+
+    html += "</table>";
+
+    document.getElementById("processTable").innerHTML =
+        processes.length ? html : "No processes added.";
+}
+
+
+function escapeText(s)
+{
+    return String(s).replace(/[&<>"']/g, c =>
+        ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])
+    );
+}
+
+
+function removeProcess(i)
+{
+    processes.splice(i,1);
+    processes.forEach((p,index) => p.index = index);
+    renderProcesses();
+    resetChart();
+}
+
+
+function sampleData()
+{
+    processes = [
+        {id:"P1",at:0,bt:5,index:0},
+        {id:"P2",at:1,bt:3,index:1},
+        {id:"P3",at:2,bt:1,index:2},
+        {id:"P4",at:4,bt:2,index:3}
+    ];
+
+    renderProcesses();
+    resetChart();
+}
+
+
+function changeAlgorithm()
+{
+    let alg = document.getElementById("algorithm").value;
+
+    document.getElementById("quantumBox").style.display =
+        alg === "RR" ? "block" : "none";
+
+    const descriptions = {
+        FCFS: "FCFS executes processes according to arrival time.",
+        SJF: "SJF selects the shortest available process.",
+        RR: "Round Robin executes each process for a fixed time quantum."
+    };
+
+    document.getElementById("description").innerText =
+        descriptions[alg];
+
+    resetChart();
+}
+
+
+function addSegment(pid,start,end)
+{
+    if(end > start)
+        timeline.push({pid,start,end});
+}
+
+
+function runFCFS()
+{
+    let list = [...processes].sort(
+        (a,b) => a.at-b.at || a.index-b.index
+    );
+
+    let time = 0;
+
+    for(let p of list)
+    {
+        if(time < p.at)
+        {
+            addSegment("IDLE",time,p.at);
+            time = p.at;
+        }
+
+        let start = time;
+        time += p.bt;
+
+        addSegment(p.id,start,time);
+
+        results.push({...p,ct:time});
+
+        addLog(p.id + " executes from " +
+               start + " to " + time + ".");
+    }
+}
+
+
+function runSJF()
+{
+    let time = 0;
+    let completed = new Set();
+
+    while(completed.size < processes.length)
+    {
+        let ready = processes.filter(p =>
+            !completed.has(p.id) && p.at <= time
+        ).sort((a,b) =>
+            a.bt-b.bt || a.at-b.at || a.index-b.index
+        );
+
+        if(ready.length === 0)
+        {
+            let next = Math.min(
+                ...processes.filter(p => !completed.has(p.id))
+                .map(p => p.at)
+            );
+
+            addSegment("IDLE",time,next);
+            addLog("CPU is idle from " + time + " to " + next + ".");
+            time = next;
+            continue;
+        }
+
+        let p = ready[0];
+        let start = time;
+
+        time += p.bt;
+
+        addSegment(p.id,start,time);
+
+        completed.add(p.id);
+
+        results.push({...p,ct:time});
+
+        addLog(p.id + " selected using shortest burst time.");
+    }
+}
+
+
+function runRR(q)
+{
+    let queue = [];
+    let remaining = new Map(
+        processes.map(p => [p.id,p.bt])
+    );
+
+    let list = [...processes].sort(
+        (a,b) => a.at-b.at || a.index-b.index
+    );
+
+    let time = 0;
+    let i = 0;
+    let completed = 0;
+
+    while(completed < processes.length)
+    {
+        while(i < list.length && list[i].at <= time)
+        {
+            queue.push(list[i]);
+            i++;
+        }
+
+        if(queue.length === 0)
+        {
+            let next = list[i].at;
+
+            addSegment("IDLE",time,next);
+            addLog("CPU idle until time " + next);
+
+            time = next;
+            continue;
+        }
+
+        let p = queue.shift();
+
+        let run = Math.min(q,remaining.get(p.id));
+
+        let start = time;
+        time += run;
+
+        remaining.set(p.id,remaining.get(p.id)-run);
+
+        addSegment(p.id,start,time);
+
+        while(i < list.length && list[i].at <= time)
+        {
+            queue.push(list[i]);
+            i++;
+        }
+
+        if(remaining.get(p.id) > 0)
+        {
+            queue.push(p);
+            addLog(p.id + " executed for " + run +
+                   " units. Remaining time: " +
+                   remaining.get(p.id));
+        }
+        else
+        {
+            completed++;
+            results.push({...p,ct:time});
+            addLog(p.id + " completed at time " + time);
+        }
+    }
+}
+
+
+function addLog(message)
+{
+    let box = document.getElementById("log");
+
+    if(box.innerHTML.includes("Waiting for simulation"))
+        box.innerHTML = "";
+
+    let item = document.createElement("div");
+    item.textContent = message;
+    box.appendChild(item);
+}
+
+
+function runSimulation()
+{
+    if(processes.length === 0)
+    {
+        alert("Add processes first.");
+        return;
+    }
+
+    resetChart();
+
+    let alg = document.getElementById("algorithm").value;
+
+    if(alg === "FCFS")
+        runFCFS();
+
+    else if(alg === "SJF")
+        runSJF();
+
+    else
+    {
+        let q = Number(document.getElementById("quantum").value);
+
+        if(!Number.isInteger(q) || q < 1)
+        {
+            alert("Enter a valid time quantum.");
+            resetChart();
+            return;
+        }
+
+        runRR(q);
+    }
+
+    results = results.map(p => ({
+        ...p,
+        tat:p.ct-p.at,
+        wt:p.ct-p.at-p.bt
+    }));
+
+    renderResults();
+    renderChart();
+
+    step = 0;
+    highlightStep();
+}
+
+
+function renderChart()
+{
+    let chart = document.getElementById("chart");
+    chart.innerHTML = "";
+
+    let total = Math.max(1,...timeline.map(s => s.end));
+
+    timeline.forEach((s,i) => {
+        let block = document.createElement("div");
+
+        block.className = "block" +
+            (s.pid === "IDLE" ? " idle" : "");
+
+        block.dataset.index = i;
+
+        block.style.flex = (s.end-s.start);
+        block.style.background = s.pid === "IDLE"
+            ? "#9099a9"
+            : colors[processes.findIndex(p => p.id === s.pid) % colors.length];
+
+        block.innerHTML =
+            escapeText(s.pid) +
+            "<small>" + s.start + " - " + s.end + "</small>";
+
+        chart.appendChild(block);
+    });
+
+    let busy = timeline.filter(s => s.pid !== "IDLE")
+        .reduce((sum,s) => sum+s.end-s.start,0);
+
+    document.getElementById("busy").textContent = busy;
+    document.getElementById("total").textContent = total;
+}
+
+
+function highlightStep()
+{
+    document.querySelectorAll(".block").forEach((b,i) => {
+        b.classList.toggle("active",i === step);
+    });
+
+    let s = timeline[step];
+
+    if(s)
+    {
+        addLog("Highlighted: " + s.pid +
+               " from time " + s.start +
+               " to " + s.end + ".");
+    }
+}
+
+
+function nextStep()
+{
+    if(timeline.length === 0)
+    {
+        runSimulation();
+        return;
+    }
+
+    if(step < timeline.length-1)
+    {
+        step++;
+        highlightStep();
+    }
+    else
+    {
+        addLog("Simulation completed. All chart intervals viewed.");
+    }
+}
+
+
+function renderResults()
+{
+    let html = `
+    <table>
+    <tr>
+    <th>PID</th>
+    <th>AT</th>
+    <th>BT</th>
+    <th>CT</th>
+    <th>TAT</th>
+    <th>WT</th>
+    </tr>`;
+
+    let sorted = [...results].sort((a,b) => a.index-b.index);
+
+    sorted.forEach(p => {
+        html += `
+        <tr>
+        <td>${escapeText(p.id)}</td>
+        <td>${p.at}</td>
+        <td>${p.bt}</td>
+        <td>${p.ct}</td>
+        <td>${p.tat}</td>
+        <td>${p.wt}</td>
+        </tr>`;
+    });
+
+    html += "</table>";
+
+    document.getElementById("resultTable").innerHTML = html;
+
+    let n = results.length;
+
+    document.getElementById("avgWT").textContent =
+        (results.reduce((s,p)=>s+p.wt,0)/n).toFixed(2);
+
+    document.getElementById("avgTAT").textContent =
+        (results.reduce((s,p)=>s+p.tat,0)/n).toFixed(2);
+}
+
+
+function resetChart()
+{
+    timeline = [];
+    results = [];
+    step = 0;
+
+    document.getElementById("chart").innerHTML =
+        "Gantt chart appears here.";
+
+    document.getElementById("resultTable").innerHTML =
+        "No results available.";
+
+    document.getElementById("log").innerHTML =
+        "<div>Waiting for simulation...</div>";
+
+    ["busy","total","avgWT","avgTAT"].forEach(id => {
+        document.getElementById(id).textContent = "-";
+    });
+}
+
+
+function clearAll()
+{
+    processes = [];
+    renderProcesses();
+    resetChart();
+}
+
+
+function showTab(id,button)
+{
+    document.querySelectorAll(".content").forEach(c =>
+        c.classList.remove("active")
+    );
+
+    document.querySelectorAll(".tab").forEach(b =>
+        b.classList.remove("active")
+    );
+
+    document.getElementById(id).classList.add("active");
+    button.classList.add("active");
+}
+
+renderProcesses();
+
+</script>
+
+</body>
+</html>
